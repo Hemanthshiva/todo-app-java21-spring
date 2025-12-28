@@ -50,7 +50,7 @@ public class AuthorityRepositoryTest {
         // Then
         List<String> authorities = authorityRepository.findAuthoritiesByUsername("testuser");
         assertEquals(1, authorities.size());
-        assertEquals("ROLE_TEST", authorities.get(0));
+        assertEquals("ROLE_TEST", authorities.getFirst());
     }
 
     @Test
@@ -65,7 +65,7 @@ public class AuthorityRepositoryTest {
         // Then
         List<String> authorities = authorityRepository.findAuthoritiesByUsername("testuser");
         assertEquals(1, authorities.size());
-        assertEquals("ROLE_TEST2", authorities.get(0));
+        assertEquals("ROLE_TEST2", authorities.getFirst());
     }
 
     @Test

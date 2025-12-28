@@ -70,7 +70,7 @@ public class DatabaseIntegrationTest {
         // Then
         List<Todo> todos = todoRepository.findByUsername("dbuser");
         assertFalse(todos.isEmpty());
-        assertEquals("Database Test Todo", todos.get(0).getDescription());
+        assertEquals("Database Test Todo", todos.getFirst().getDescription());
     }
 
     @Test
@@ -118,7 +118,7 @@ public class DatabaseIntegrationTest {
 
         // Then
         assertFalse(authorities.isEmpty());
-        assertEquals("ROLE_TEST", authorities.get(0));
+        assertEquals("ROLE_TEST", authorities.getFirst());
     }
 
     @Test
@@ -133,7 +133,7 @@ public class DatabaseIntegrationTest {
         // Then
         List<String> authorities = authorityRepository.findAuthoritiesByUsername("dbuser");
         assertEquals(1, authorities.size());
-        assertEquals("ROLE_TEST2", authorities.get(0));
+        assertEquals("ROLE_TEST2", authorities.getFirst());
     }
 
     @Test
