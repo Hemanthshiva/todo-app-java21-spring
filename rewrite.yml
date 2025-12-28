@@ -1,0 +1,6 @@
+type: specs.openrewrite.org/v1beta/recipe
+name: com.learn.spring.UpgradeToJava21
+displayName: Upgrade to Java 21
+description: Apply OpenRewrite's UpgradeToJava21 recipe
+recipeList:
+  - org.openrewrite.java.migrate.UpgradeToJava21

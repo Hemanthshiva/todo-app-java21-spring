@@ -50,8 +50,8 @@ public class TodoRepositoryTest {
         // Then
         assertFalse(todos.isEmpty());
         assertEquals(1, todos.size());
-        assertEquals("Test Todo", todos.get(0).getDescription());
-        assertEquals("testuser", todos.get(0).getUsername());
+        assertEquals("Test Todo", todos.getFirst().getDescription());
+        assertEquals("testuser", todos.getFirst().getUsername());
     }
 
     @Test
