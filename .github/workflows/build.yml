@@ -9,10 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: todo-app
-
     steps:
     - uses: actions/checkout@v4
     - name: Set up JDK 21
@@ -21,5 +17,7 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
+    - name: Make mvnw executable
+      run: chmod +x mvnw
     - name: Build and Test with Maven
       run: ./mvnw clean install
