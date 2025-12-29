@@ -25,19 +25,22 @@ public class UserInitializer {
 
     @PostConstruct
     public void init() {
-        // Check if default user exists
-        if (!userRepository.existsByUsername("user")) {
-            // Create default user
-            User user = new User(
-                "user",
-                passwordEncoder.encode("password"),
-                "user@example.com"
-            );
+        // Ensure default users exist on startup
+        createUserIfNotExists("admin", "admin123", "admin@example.com", true);
+        createUserIfNotExists("user1", "user123", "user1@example.com", false);
+        createUserIfNotExists("user2", "user123", "user2@example.com", false);
+    }
+
+    private void createUserIfNotExists(String username, String rawPassword, String email, boolean isAdmin) {
+        if (!userRepository.existsByUsername(username)) {
+            User user = new User(username, passwordEncoder.encode(rawPassword), email);
             userRepository.save(user);
 
-            // Add authorities
-            authorityRepository.addAuthority("user", "ROLE_USER");
-            authorityRepository.addAuthority("user", "ROLE_ADMIN");
+            // Assign authorities
+            authorityRepository.addAuthority(username, "ROLE_USER");
+            if (isAdmin) {
+                authorityRepository.addAuthority(username, "ROLE_ADMIN");
+            }
 
             System.out.println("Default user created: " + user.getUsername());
         }
