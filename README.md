@@ -1,151 +1,651 @@
-# Todo Application
+# Todo Application - Collaborative Task Management System
 
-This is a Spring Boot application for managing todos.
+## Project Overview
+
+This is a modern **Spring Boot 3.2.5** application built with **Java 21** that provides a comprehensive collaborative task management and todo tracking system. It features user authentication, task assignment workflows, and real-time notifications, enabling teams to efficiently manage and collaborate on tasks.
+
+The application is designed with a complete tech stack including:
+- **Backend Framework**: Spring Boot 3.2.5 with Spring Web, Spring Security, and Spring Data JPA
+- **Frontend**: Thymeleaf templating with Bootstrap 5.3.3 for responsive UI
+- **Database**: H2 (in-memory) for development, SQLite for production/Docker deployments
+- **Documentation**: Swagger/OpenAPI 3.0 with interactive Swagger UI
+- **Build Tool**: Apache Maven
+- **Containerization**: Docker and Docker Compose support
+
+## Table of Contents
+
+- [Features](#features)
+- [Getting Started](#getting-started)
+- [Running the Application](#running-the-application)
+- [Project Structure](#project-structure)
+- [User Workflow: Assigning Todos](#user-workflow-assigning-todos)
+- [API Documentation](#api-documentation)
+- [Authentication](#authentication)
+- [Endpoints Reference](#endpoints-reference)
+- [Docker Support](#docker-support)
+- [Technology Stack](#technology-stack)
+- [Development](#development)
+- [Testing](#testing)
+
+## Features
+
+### Core Todo Management
+- **Create Todos**: Users can create new tasks with descriptions and target completion dates
+- **View Todos**: Display all todos for the logged-in user with filtering and sorting
+- **Update Todos**: Modify todo descriptions, dates, and completion status
+- **Delete Todos**: Remove unwanted todos from the system
+- **Mark Complete**: Toggle todo status between pending and completed
+
+### Collaborative Features
+- **Assign Todos**: Create and manage task assignments to other users
+- **Assignment Workflow**: Three-step workflow - Assign → Accept/Decline → Complete
+- **Task Transfer**: Users can take ownership of assigned tasks
+- **Permission Management**: Only task owners and assigned users can edit tasks
+
+### User Management
+- **User Registration**: Create new user accounts with email validation
+- **Secure Authentication**: Form-based authentication with Spring Security
+- **Password Encryption**: Passwords are securely hashed using bcrypt
+- **User Search**: Search functionality to find users for task assignment
+
+### Notifications
+- **Real-time Alerts**: Get notified about task assignments and updates
+- **Notification Management**: Mark notifications as read
+- **Event Tracking**: Track assignment acceptance, decline, and completion events
+
+### API Documentation
+- **Swagger UI**: Interactive API documentation and testing interface
+- **OpenAPI 3.0**: Complete API specification
+- **API Info Page**: User-friendly overview of available endpoints
+
+## Getting Started
+
+### Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Java 21** (JDK 21 or later)
+- **Apache Maven 3.6+**
+- **Git** (for cloning the repository)
+- **Docker & Docker Compose** (optional, for containerized deployment)
+
+### Installation
+
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/Hemanthshiva/todo-app-java21-spring.git
+   cd todo-app
+   ```
+
+2. **Build the Project**
+   ```bash
+   mvn clean install
+   ```
+
+   This command:
+   - Downloads all dependencies
+   - Compiles the source code
+   - Runs tests
+   - Packages the application
+
+3. **Verify Installation**
+   ```bash
+   mvn --version
+   java -version
+   ```
 
 ## Running the Application
 
-The application runs on port 8091. After starting the application, you can access it at:
+### Running via Maven
+
+Start the application using the Spring Boot Maven plugin:
+
+```bash
+mvn spring-boot:run
+```
+
+The application will start on **http://localhost:8091**
+
+### Running the Packaged JAR
+
+After building, you can run the JAR file directly:
+
+```bash
+java -jar target/todo-app-0.0.1-SNAPSHOT.jar
+```
+
+### Accessing the Application
+
+Once the application is running:
+
+1. **Web Interface**: http://localhost:8091
+   - Main todo list and management interface
+   
+2. **Swagger UI**: http://localhost:8091/swagger-ui/index.html
+   - Interactive API documentation and testing
+   
+3. **API Info Page**: http://localhost:8091/api-info
+   - Overview of available endpoints
+   
+4. **Login Page**: http://localhost:8091/login
+   - User authentication
+   
+5. **Registration Page**: http://localhost:8091/register
+   - Create new user accounts
+
+## Project Structure
 
 ```
-http://localhost:8091
+todo-app/
+├── src/
+│   ├── main/
+│   │   ├── java/com/learn/spring/todoapp/
+│   │   │   ├── config/              # Configuration classes (OpenAPI, Security)
+│   │   │   ├── controller/          # MVC and REST controllers
+│   │   │   ├── entity/              # JPA entities (Todo, User, Assignment)
+│   │   │   ├── repository/          # Spring Data JPA repositories
+│   │   │   ├── service/             # Business logic services
+│   │   │   ├── dto/                 # Data transfer objects
+│   │   │   ├── security/            # Security-related classes
+│   │   │   └── TodoAppApplication.java
+│   │   └── resources/
+│   │       ├── templates/           # Thymeleaf HTML templates
+│   │       ├── static/              # CSS, JavaScript, images
+│   │       ├── application.properties
+│   │       ├── schema.sql           # Database schema initialization
+│   │       └── data.sql             # Sample data
+│   └── test/
+│       ├── java/                    # Unit and integration tests
+│       └── resources/               # Test configuration files
+├── pom.xml                          # Maven project configuration
+├── Dockerfile                       # Docker image definition
+├── docker-compose.yml               # Docker Compose configuration
+└── README.md                        # This file
 ```
+
+### Key Components
+
+#### Controllers
+- **TodoControllerJpa**: MVC controller for todo management views and CRUD operations
+- **UserController**: User registration, login, and search functionality
+- **TodoAssignmentController**: REST endpoints for assignment workflow
+- **NotificationController**: REST endpoints for notification management
+- **WelcomeController**: Home page controller
+- **LoginController**: Login page routing
+
+#### Entities
+- **Todo**: Represents a task with description, target date, and completion status
+- **User**: User account with username, password, and email
+- **TodoAssignment**: Assignment relationship between users and todos
+- **Notification**: User notifications for events and updates
+- **AssignmentStatus**: Enum for assignment states (PENDING, ACCEPTED, DECLINED, COMPLETED)
+
+#### Services
+- **TodoAssignmentService**: Core business logic for assignment workflow
+- **NotificationService**: Notification creation and retrieval
+- **UserInitializer**: Initialization of default users and roles
+- **DatabaseUserDetailsService**: Spring Security user details provider
+
+#### Repositories
+- **TodoRepository**: JPA repository for todo persistence
+- **UserRepository**: User data access layer
+- **TodoAssignmentRepository**: Assignment data persistence
+- **NotificationRepository**: Notification storage and retrieval
+- **AuthorityRepository**: User authority/role management
+
+## User Workflow: Assigning Todos
+
+The application implements a complete collaborative workflow for task assignments:
+
+### Step 1: Create and Assign a Task
+1. User logs in and navigates to their todo list
+2. Creates a new todo or selects an existing one
+3. Clicks the "Assign" button
+4. Searches for a user by username
+5. Clicks "Assign" next to the desired user
+6. Task status changes to "Assigned to [username]" (Pending)
+
+### Step 2: Receive Assignment Notification
+1. Assigned user receives a notification (shown via bell icon)
+2. Notification appears in the "Assigned to You" section
+3. User can see the task in their dashboard with pending status
+4. Count of unread notifications is displayed
+
+### Step 3: Respond to Assignment
+The assignee has two options:
+
+**Option A: Accept the Assignment**
+- Sets a tentative completion date for the task
+- Task status changes to "Accepted"
+- Original assigner receives a notification
+- Assignee can now edit and work on the task
+
+**Option B: Decline the Assignment**
+- Provides an optional reason for declining
+- Task status reverts to unassigned
+- Original assigner receives a notification with the decline reason
+- Task is available for assignment to another user
+
+### Step 4: Complete the Task
+1. Once accepted, the assignee can update the task details
+2. Marks the task as "Done" when completed
+3. Original assigner receives a completion notification
+4. Task appears in the completed section for both users
 
 ## API Documentation
 
 ### Swagger UI
 
-You can access the Swagger UI documentation for this application at:
+Interactive API documentation is available at:
 
 ```
 http://localhost:8091/swagger-ui/index.html
 ```
 
-This provides an interactive interface to explore and test the API endpoints.
+Features:
+- Visual representation of all endpoints
+- Request/response schemas
+- Try-it-out functionality for testing endpoints
+- Authentication support for protected endpoints
+- Detailed parameter and response documentation
 
 ### API Information Page
 
-For a more user-friendly overview of the API endpoints, you can visit:
+User-friendly API overview at:
 
 ```
 http://localhost:8091/api-info
 ```
 
-This page provides information about:
-- How to access the Swagger UI
-- The available Todo API endpoints
-
-## Todo API Endpoints
-
-This application primarily uses MVC controllers to serve HTML views rather than REST API endpoints. You can interact with the Todo functionality through the following URLs:
-
-| URL | HTTP Method | Description |
-|-----|-------------|-------------|
-| /list-todos | GET | Lists all todos for the logged-in user |
-| /add-todo | GET | Shows the page to add a new todo |
-| /add-todo | POST | Adds a new todo |
-| /delete-todo?id={id} | GET | Deletes a todo with the specified ID |
-| /update-todo?id={id} | GET | Shows the page to update a todo with the specified ID |
-| /update-todo | POST | Updates a todo |
+Provides:
+- Quick start guide
+- Available endpoint categories
+- Navigation to Swagger UI
+- Authentication instructions
 
 ## Authentication
 
-The application uses form-based authentication. You can register a new user or log in with an existing user.
+### User Credentials
 
-- Login page: http://localhost:8091/login
-- Registration page: http://localhost:8091/register
+The application uses form-based authentication with Spring Security.
 
-The API information page and Swagger UI are accessible without authentication.
+**Default Users** (created on application startup):
+- **Username**: `admin` | **Password**: `admin123`
+- **Username**: `user1` | **Password**: `user123`
+- **Username**: `user2` | **Password**: `user123`
+
+### Authentication URLs
+
+- **Login Page**: http://localhost:8091/login
+- **Registration Page**: http://localhost:8091/register
+- **Logout**: Use the logout link in the application header
+
+### Authentication Methods
+
+1. **Form-Based Authentication**: Default login form
+2. **Basic Authentication**: For API calls (not recommended for production)
+3. **Session-Based**: Maintains user session after login
+
+### Security Features
+
+- Passwords are encrypted using bcrypt
+- CSRF protection enabled
+- Session-based authentication
+- Authority-based access control
+- Secure password validation during registration
+
+## Endpoints Reference
+
+### Web (MVC) Endpoints
+
+#### Home & Authentication
+| Endpoint | Method | Description | Authentication |
+|----------|--------|-------------|-----------------|
+| `/` | GET | Home page / redirect | Required |
+| `/welcome` | GET | Welcome page | Required |
+| `/login` | GET | Login form | None |
+| `/login` | POST | Process login | None |
+| `/register` | GET | Registration form | None |
+| `/register` | POST | Create new account | None |
+| `/logout` | POST | Logout | Required |
+
+#### Todo Management
+| Endpoint | Method | Description | Authentication |
+|----------|--------|-------------|-----------------|
+| `/list-todos` | GET | List all user todos | Required |
+| `/add-todo` | GET | Show create todo form | Required |
+| `/add-todo` | POST | Create new todo | Required |
+| `/todos/{id}` | GET | Show edit todo form | Required |
+| `/todos/{id}` | PUT | Update existing todo | Required |
+| `/todos/{id}` | DELETE | Delete todo | Required |
+
+### REST API Endpoints
+
+#### User Management
+| Endpoint | Method | Description | Authentication |
+|----------|--------|-------------|-----------------|
+| `/api/users/search?username={query}` | GET | Search users by username | Required |
+
+#### Todo Assignment Workflow
+| Endpoint | Method | Description | Request Body | Authentication |
+|----------|--------|-------------|---------------|-----------------|
+| `/todos/{todoId}/assign` | POST | Assign todo to user | `{"assigneeUsername": "string"}` | Required |
+| `/assignments/{assignmentId}/respond` | POST | Accept/decline assignment | `{"action": "accept\|decline", "tentativeCompletionDate": "date", "declineReason": "string"}` | Required |
+
+#### Notifications
+| Endpoint | Method | Description | Authentication |
+|----------|--------|-------------|-----------------|
+| `/api/notifications` | GET | Get unread notifications | Required |
+| `/api/notifications/{id}/read` | POST | Mark notification as read | Required |
+
+### API Information
+| Endpoint | Method | Description | Authentication |
+|----------|--------|-------------|-----------------|
+| `/api-info` | GET | API documentation page | None |
+| `/swagger-ui/index.html` | GET | Swagger UI | None |
+| `/v3/api-docs` | GET | OpenAPI specification | None |
 
 ## Docker Support
 
-This application can be containerized and run using Docker. Below are instructions for building, running, and deploying the application with Docker.
+This application is fully containerized and can be deployed using Docker and Docker Compose.
 
 ### Prerequisites
 
 - Docker installed on your machine
+- Docker Compose (for multi-container setup)
 
 ### Building the Docker Image
 
-Build the Docker image:
+Build the image using the multi-stage Dockerfile:
+
 ```bash
 docker build -t todo-app .
 ```
 
-The Dockerfile uses a multi-stage build process that automatically compiles the application, so you don't need to build the JAR file separately.
+The Dockerfile:
+- Uses OpenJDK 21 slim base image
+- Builds the application using Maven in the first stage
+- Creates an optimized runtime image in the second stage
+- Exposes port 8091
+- Mounts a volume at `/data` for database persistence
 
 ### Running Locally with Docker
 
-Run the application as a standalone container:
+#### Standalone Container
+
+Run the application as a single container:
 
 ```bash
 docker run -d -p 8091:8091 -v todo-data:/data --name todo-app-container todo-app
 ```
 
-This command:
-- Runs the container in detached mode (`-d`)
-- Maps port 8091 on your host to port 8091 in the container
-- Creates a named volume `todo-data` mounted at `/data` in the container for database persistence
-- Names the container `todo-app-container`
+Command options:
+- `-d`: Run in detached mode (background)
+- `-p 8091:8091`: Map port 8091 from host to container
+- `-v todo-data:/data`: Create and mount named volume for data persistence
+- `--name todo-app-container`: Name the container for easy reference
 
-Access the application at:
-```
-http://localhost:8091
-```
+Access the application at: http://localhost:8091
 
-### Deploying with Docker Compose
+#### Viewing Logs
 
-For a more production-like setup, you can use Docker Compose. Create a file named `docker-compose.yml` with the following content:
-
-```yaml
-version: '3.8'
-
-services:
-  todo-app:
-    build: .
-    ports:
-      - "8091:8091"
-    volumes:
-      - todo-data:/data
-    restart: unless-stopped
-
-volumes:
-  todo-data:
+```bash
+docker logs -f todo-app-container
 ```
 
-Then run:
+#### Managing the Container
+
+Stop the container:
+```bash
+docker stop todo-app-container
+```
+
+Start a stopped container:
+```bash
+docker start todo-app-container
+```
+
+Remove the container:
+```bash
+docker rm todo-app-container
+```
+
+### Docker Compose Deployment
+
+For a complete, production-like setup, use Docker Compose:
+
+#### Configuration
+
+The `docker-compose.yml` file defines:
+- **todo-app service**: The main application
+- **Port mapping**: 8091:8091
+- **Persistent volume**: todo-data for SQLite database
+- **Restart policy**: Unless stopped
+
+#### Running with Docker Compose
+
+Start the application stack:
 
 ```bash
 docker-compose up -d
 ```
 
-To stop the services:
+Options:
+- `-d`: Run in detached mode
+- `--build`: Rebuild images before starting
 
+#### Monitoring
+
+View logs:
+```bash
+docker-compose logs -f todo-app
+```
+
+View service status:
+```bash
+docker-compose ps
+```
+
+#### Stopping Services
+
+Stop all services:
 ```bash
 docker-compose down
 ```
 
-### Managing the Docker Container
+Stop without removing volumes:
+```bash
+docker-compose down --remove-orphans
+```
 
-- To stop the container:
-  ```bash
-  docker stop todo-app-container
-  ```
+#### Database Persistence
 
-- To start an existing container:
-  ```bash
-  docker start todo-app-container
-  ```
+- SQLite database file: `/data/todo.db` (inside container)
+- Persistent volume: `todo-data` (on host machine)
+- Data persists across container restarts and removals
 
-- To view logs:
-  ```bash
-  docker logs todo-app-container
-  ```
+#### Environment Configuration
 
-- To remove the container:
-  ```bash
-  docker rm todo-app-container
-  ```
+To use environment variables in Docker Compose, create a `.env` file:
 
-### Database Persistence
+```env
+APP_PORT=8091
+JAVA_OPTS=-Xmx512m
+```
 
-The application uses SQLite with the database file stored in a Docker volume. This ensures your data persists even if the container is removed. The database file is stored at `/data/todo.db` inside the container.
+## Technology Stack
+
+### Backend
+- **Java 21**: Latest Java LTS version with modern language features
+- **Spring Boot 3.2.5**: Modern Spring Boot with Servlet API 6 and Jakarta EE
+- **Spring Web**: REST and MVC controller support
+- **Spring Security**: Authentication and authorization framework
+- **Spring Data JPA**: Object-relational mapping and persistence
+- **Thymeleaf**: Modern server-side template engine
+- **Lombok**: Reduces boilerplate code with annotations
+
+### Frontend
+- **Bootstrap 5.3.3**: Responsive CSS framework
+- **jQuery 3.6.0**: JavaScript library for DOM manipulation
+- **Bootstrap Datepicker 1.9.0**: Date selection widget
+- **Thymeleaf Layout Dialect**: Template composition
+
+### Database
+- **H2 Database**: In-memory database for development
+- **SQLite**: File-based database for production/Docker
+- **Hibernate**: JPA implementation for ORM
+
+### API Documentation
+- **SpringDoc OpenAPI 2.3.0**: Automatic OpenAPI/Swagger generation
+- **Swagger UI**: Interactive API documentation interface
+
+### Testing
+- **JUnit 5**: Testing framework
+- **Mockito**: Mocking library
+- **Spring Security Test**: Security-specific test support
+
+### Build & Deployment
+- **Apache Maven 3.6+**: Build automation
+- **Docker**: Containerization
+- **Docker Compose**: Multi-container orchestration
+
+## Development
+
+### Building the Project
+
+```bash
+# Clean and build
+mvn clean install
+
+# Build without tests
+mvn clean install -DskipTests
+
+# Build specific module
+mvn clean install -DskipTests -pl :module-name
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+mvn test
+
+# Run specific test class
+mvn test -Dtest=TodoControllerTest
+
+# Run with coverage
+mvn clean test jacoco:report
+```
+
+### Code Quality
+
+```bash
+# Check for common issues
+mvn spotbugs:check
+
+# Run code analysis
+mvn pmd:check
+
+# Format code
+mvn spotless:apply
+```
+
+### IDE Setup
+
+#### IntelliJ IDEA
+1. Open project with "pom.xml"
+2. Maven will auto-download dependencies
+3. Set Project SDK to Java 21
+4. Mark `src/main/java` as Sources Root
+5. Mark `src/test/java` as Test Sources Root
+
+#### Eclipse
+1. Import as "Existing Maven Projects"
+2. Maven will configure the project
+3. Set JRE to Java 21
+4. Configure Thymeleaf support if needed
+
+## Testing
+
+The project includes comprehensive test coverage:
+
+### Test Categories
+- **Unit Tests**: Individual component testing
+- **Integration Tests**: Multi-component interaction testing
+- **Security Tests**: Authentication and authorization testing
+
+### Test Reports
+
+After running tests, view the report:
+```bash
+mvn clean test
+# Reports available in: target/surefire-reports/
+```
+
+### Test Execution
+
+Run all tests:
+```bash
+mvn test
+```
+
+Run specific test:
+```bash
+mvn test -Dtest=TodoRepositoryTest
+```
+
+Run integration tests:
+```bash
+mvn test -Dtest=*IntegrationTest
+```
+
+## Troubleshooting
+
+### Port 8091 Already in Use
+```bash
+# Find process using port 8091
+lsof -i :8091
+# Kill the process
+kill -9 <PID>
+# Or use a different port:
+java -jar target/todo-app-0.0.1-SNAPSHOT.jar --server.port=8092
+```
+
+### Database Issues
+- Clear database: Delete the `todo.db` file from `/data` directory
+- Reset H2: Happens automatically on application restart
+
+### Docker Issues
+```bash
+# Remove all containers and volumes
+docker system prune -a -v
+
+# Rebuild image
+docker build -t todo-app --no-cache .
+```
+
+## Contributing
+
+Contributions are welcome! Please:
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## License
+
+This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
+
+## Support & Contact
+
+For issues, questions, or suggestions:
+- Create an issue in the GitHub repository
+- Contact the development team at support@todoapp.com
+
+---
+
+**Last Updated**: December 2024  
+**Project Version**: 1.0.0  
+**Java Version**: 21  
+**Spring Boot Version**: 3.2.5

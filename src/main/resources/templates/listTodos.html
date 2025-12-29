@@ -38,12 +38,25 @@
       .badge {
         padding: 0.5rem 0.75rem;
       }
+      /* Search Results */
+      #searchResults {
+          max-height: 200px;
+          overflow-y: auto;
+      }
+      .search-result-item {
+          cursor: pointer;
+      }
+      .search-result-item:hover {
+          background-color: #f8f9fa;
+      }
     </style>
   </th:block>
 </head>
 <body>
   <div layout:fragment="content">
     <div class="container">
+      
+      <!-- Owned Todos -->
       <div class="todo-header text-center">
         <h1>Your Todos</h1>
       </div>
@@ -67,8 +80,24 @@
                 <span th:unless="${todo.done}" class="badge bg-warning" th:data-testid="'todo-status-' + ${todo.id}">Pending</span>
               </td>
               <td class="action-buttons">
-                <a th:href="@{/update-todo(id=${todo.id})}" class="btn btn-primary btn-sm" th:data-testid="'todo-edit-button-' + ${todo.id}">Update</a>
-                <a th:href="@{/delete-todo(id=${todo.id})}" class="btn btn-danger btn-sm" th:data-testid="'todo-delete-button-' + ${todo.id}">Delete</a>
+                <a th:href="@{/todos/{id}(id=${todo.id})}" class="btn btn-primary btn-sm" th:data-testid="'todo-edit-button-' + ${todo.id}">Update</a>
+                <form th:action="@{/todos/{id}(id=${todo.id})}" method="post" style="display:inline;" th:data-testid="'todo-delete-form-' + ${todo.id}">
+                  <input type="hidden" name="_method" value="delete" />
+                  <button type="submit" class="btn btn-danger btn-sm" th:data-testid="'todo-delete-button-' + ${todo.id}">Delete</button>
+                </form>
+                
+                <th:block th:if="${!todo.done}">
+                    <div th:with="activeAssignment=${todo.activeAssignment}">
+                        <button th:if="${activeAssignment == null}" 
+                                class="btn btn-info btn-sm text-white" 
+                                th:onclick="'openAssignModal(' + ${todo.id} + ')'"
+                                data-testid="todo-assign-button">Assign</button>
+                        <span th:if="${activeAssignment != null}" 
+                              class="badge bg-info text-dark" 
+                              th:text="'Assigned to ' + ${activeAssignment.assignee.username}"
+                              data-testid="todo-assigned-status"></span>
+                    </div>
+                </th:block>
               </td>
             </tr>
           </tbody>
@@ -77,7 +106,213 @@
       <div class="text-center add-todo-btn">
         <a href="/add-todo" class="btn btn-success" data-testid="todo-add-button">Add New Todo</a>
       </div>
+
+      <!-- Assigned To Me Todos -->
+      <div th:if="${not #lists.isEmpty(assignedTodos)}" class="mt-5">
+          <div class="todo-header text-center">
+            <h1>Assigned to You</h1>
+          </div>
+          <div class="table-responsive todo-table">
+            <table class="table table-striped table-bordered">
+              <thead class="table-light">
+                <tr>
+                  <th>Description</th>
+                  <th>Assigner</th>
+                  <th>Target Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:each="assignment : ${assignedTodos}">
+                  <td th:text="${assignment.todo.description}"></td>
+                  <td th:text="${assignment.assigner.username}"></td>
+                  <td th:text="${assignment.tentativeCompletionDate != null ? #temporals.format(assignment.tentativeCompletionDate, 'yyyy-MM-dd') : #temporals.format(assignment.todo.targetDate, 'yyyy-MM-dd')}"></td>
+                  <td class="text-center">
+                    <span th:text="${assignment.status}" class="badge bg-secondary"></span>
+                  </td>
+                  <td class="action-buttons">
+                    <th:block th:if="${assignment.status.name() == 'PENDING'}">
+                        <button class="btn btn-success btn-sm" th:onclick="'openAcceptModal(' + ${assignment.id} + ')'" data-testid="assignment-accept-button">Accept</button>
+                        <button class="btn btn-danger btn-sm" th:onclick="'openDeclineModal(' + ${assignment.id} + ')'" data-testid="assignment-decline-button">Decline</button>
+                    </th:block>
+                    <th:block th:if="${assignment.status.name() == 'ACCEPTED'}">
+                      <a th:href="@{/todos/{id}(id=${assignment.todo.id})}" class="btn btn-primary btn-sm" data-testid="assignment-update-button">Update</a>
+                    </th:block>
+                    <th:block th:if="${assignment.status.name() == 'COMPLETED'}">
+                        <span class="badge bg-success">Completed</span>
+                    </th:block>
+                </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+      </div>
+
     </div>
+
+    <!-- Assign Modal -->
+    <div class="modal fade" id="assignModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Assign Todo</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="assignTodoId">
+            <div class="mb-3">
+              <label class="form-label">Search User</label>
+              <input type="text" class="form-control" id="userSearchInput" placeholder="Type username..." data-testid="assign-user-search-input">
+            </div>
+            <div id="searchResults" class="list-group" data-testid="assign-user-results"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accept Modal -->
+    <div class="modal fade" id="acceptModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Accept Assignment</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="acceptAssignmentId">
+            <div class="mb-3">
+              <label class="form-label">Tentative Completion Date</label>
+              <input type="date" class="form-control" id="tentativeDate" data-testid="assignment-accept-date-input">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-success" onclick="confirmAccept()" data-testid="assignment-accept-submit">Accept</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Decline Modal -->
+    <div class="modal fade" id="declineModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Decline Assignment</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="declineAssignmentId">
+            <div class="mb-3">
+              <label class="form-label">Reason</label>
+              <textarea class="form-control" id="declineReason" rows="3" data-testid="assignment-decline-reason-input"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-danger" onclick="confirmDecline()" data-testid="assignment-decline-submit">Decline</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
+
+  <th:block layout:fragment="scripts">
+    <script>
+      // Assign Modal
+      const assignModal = new bootstrap.Modal(document.getElementById('assignModal'));
+      const userSearchInput = document.getElementById('userSearchInput');
+      const searchResults = document.getElementById('searchResults');
+      let searchTimeout;
+
+      function openAssignModal(todoId) {
+        document.getElementById('assignTodoId').value = todoId;
+        userSearchInput.value = '';
+        searchResults.innerHTML = '';
+        assignModal.show();
+      }
+
+      userSearchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value;
+        if (query.length < 1) {
+          searchResults.innerHTML = '';
+          return;
+        }
+        searchTimeout = setTimeout(() => {
+          fetch(`/api/users/search?username=${query}`)
+            .then(res => res.json())
+            .then(users => {
+              searchResults.innerHTML = '';
+              users.forEach(user => {
+                const item = document.createElement('a');
+                item.className = 'list-group-item list-group-item-action search-result-item';
+                item.textContent = user.username;
+                item.setAttribute('data-testid', 'assign-user-result-item');
+                item.onclick = () => assignUser(user.username);
+                searchResults.appendChild(item);
+              });
+            });
+        }, 300);
+      });
+
+      function assignUser(username) {
+        const todoId = document.getElementById('assignTodoId').value;
+        fetch(`/todos/${todoId}/assign`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ assigneeUsername: username })
+        }).then(res => {
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            alert('Failed to assign todo');
+          }
+        });
+      }
+
+      // Accept Modal
+      const acceptModal = new bootstrap.Modal(document.getElementById('acceptModal'));
+      function openAcceptModal(id) {
+        document.getElementById('acceptAssignmentId').value = id;
+        acceptModal.show();
+      }
+
+      function confirmAccept() {
+        const id = document.getElementById('acceptAssignmentId').value;
+        const date = document.getElementById('tentativeDate').value;
+        fetch(`/assignments/${id}/respond`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'accept', tentativeCompletionDate: date })
+        }).then(res => {
+          if (res.ok) window.location.reload();
+          else alert('Error accepting assignment');
+        });
+      }
+
+      // Decline Modal
+      const declineModal = new bootstrap.Modal(document.getElementById('declineModal'));
+      function openDeclineModal(id) {
+        document.getElementById('declineAssignmentId').value = id;
+        declineModal.show();
+      }
+
+      function confirmDecline() {
+        const id = document.getElementById('declineAssignmentId').value;
+        const reason = document.getElementById('declineReason').value;
+        fetch(`/assignments/${id}/respond`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'decline', declineReason: reason })
+        }).then(res => {
+          if (res.ok) window.location.reload();
+          else alert('Error declining assignment');
+        });
+      }
+    </script>
+  </th:block>
 </body>
 </html>

@@ -13,7 +13,7 @@
     <artifactId>todo-app</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>todo-app</name>
-    <description>Demo project for Spring Boot</description>
+    <description>A modern collaborative task management system built with Spring Boot.</description>
     <properties>
         <java.version>21</java.version>
     </properties>

@@ -37,6 +37,9 @@ public class Todo {
 
     private boolean done;
 
+    @jakarta.persistence.OneToMany(mappedBy = "todo", cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<TodoAssignment> assignments = new java.util.ArrayList<>();
+
     public Todo() {
     }
 
@@ -64,5 +67,13 @@ public class Todo {
         if (user != null && user.getTodos() != null) {
             user.getTodos().add(this);
         }
+    }
+
+    public TodoAssignment getActiveAssignment() {
+        if (assignments == null) return null;
+        return assignments.stream()
+                .filter(a -> a.getStatus() == AssignmentStatus.PENDING || a.getStatus() == AssignmentStatus.ACCEPTED)
+                .findFirst()
+                .orElse(null);
     }
 }

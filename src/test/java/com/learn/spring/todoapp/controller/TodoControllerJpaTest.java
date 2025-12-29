@@ -5,6 +5,7 @@ import com.learn.spring.todoapp.entity.Todo;
 import com.learn.spring.todoapp.entity.User;
 import com.learn.spring.todoapp.repository.TodoRepository;
 import com.learn.spring.todoapp.repository.UserRepository;
+import com.learn.spring.todoapp.service.TodoAssignmentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,8 @@ import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(TodoControllerJpa.class)
@@ -42,6 +45,9 @@ public class TodoControllerJpaTest {
 
     @MockBean
     private UserRepository userRepository;
+    
+    @MockBean
+    private TodoAssignmentService todoAssignmentService;
 
     private User testUser;
     private Todo testTodo;
@@ -59,14 +65,18 @@ public class TodoControllerJpaTest {
         // Given
         List<Todo> todos = Collections.singletonList(testTodo);
         when(todoRepository.findByUsername("testuser")).thenReturn(todos);
+        when(todoAssignmentService.getAssignmentsForUser("testuser")).thenReturn(Collections.emptyList());
 
         // When/Then
         mockMvc.perform(get("/list-todos"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("listTodos"))
-                .andExpect(model().attribute("todos", todos));
+                .andExpect(model().attribute("todos", todos))
+                .andExpect(model().attributeExists("assignedTodos"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("data-testid=\"todo-assign-button\"")));
 
         verify(todoRepository, times(1)).findByUsername("testuser");
+        verify(todoAssignmentService, times(1)).getAssignmentsForUser("testuser");
     }
 
     @Test
@@ -92,7 +102,7 @@ public class TodoControllerJpaTest {
                 .param("targetDate", LocalDate.now().plusDays(1).toString())
                 .with(csrf()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("list-todos"));
+                .andExpect(redirectedUrl("/list-todos"));
 
         verify(userRepository, times(1)).findByUsername("testuser");
         verify(todoRepository, times(1)).save(any(Todo.class));
@@ -106,10 +116,9 @@ public class TodoControllerJpaTest {
         doNothing().when(todoRepository).deleteById(1);
 
         // When/Then
-        mockMvc.perform(get("/delete-todo")
-                .param("id", "1"))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("list-todos"));
+        mockMvc.perform(delete("/todos/{id}", 1).with(csrf()))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/list-todos"));
 
         verify(todoRepository, times(1)).findById(1);
         verify(todoRepository, times(1)).deleteById(1);
@@ -122,11 +131,10 @@ public class TodoControllerJpaTest {
         when(todoRepository.findById(1)).thenReturn(Optional.of(testTodo));
 
         // When/Then
-        mockMvc.perform(get("/update-todo")
-                .param("id", "1"))
-                .andExpect(status().isOk())
-                .andExpect(view().name("todo"))
-                .andExpect(model().attribute("todo", testTodo));
+        mockMvc.perform(get("/todos/{id}", 1))
+            .andExpect(status().isOk())
+            .andExpect(view().name("todo"))
+            .andExpect(model().attribute("todo", testTodo));
 
         verify(todoRepository, times(1)).findById(1);
     }
@@ -140,17 +148,40 @@ public class TodoControllerJpaTest {
         when(todoRepository.save(any(Todo.class))).thenReturn(testTodo);
 
         // When/Then
-        mockMvc.perform(post("/update-todo")
-                .param("id", "1")
-                .param("description", "Updated Todo")
-                .param("targetDate", LocalDate.now().plusDays(1).toString())
-                .with(csrf()))
-                .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("list-todos"));
+        mockMvc.perform(put("/todos/{id}", 1)
+            .param("id", "1")
+            .param("description", "Updated Todo")
+            .param("targetDate", LocalDate.now().plusDays(1).toString())
+            .with(csrf()))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/list-todos"));
 
         verify(userRepository, times(1)).findByUsername("testuser");
         verify(todoRepository, times(1)).findById(1);
         verify(todoRepository, times(1)).save(any(Todo.class));
+        verify(todoAssignmentService, never()).completeAssignment(anyInt());
+    }
+    
+    @Test
+    @WithMockUser(username = "testuser")
+    void updateTodo_ShouldCompleteAssignmentWhenTodoIsDone() throws Exception {
+        // Given
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        when(todoRepository.findById(1)).thenReturn(Optional.of(testTodo));
+        when(todoRepository.save(any(Todo.class))).thenReturn(testTodo);
+
+        // When/Then
+        mockMvc.perform(put("/todos/{id}", 1)
+            .param("id", "1")
+            .param("description", "Updated Todo")
+            .param("targetDate", LocalDate.now().plusDays(1).toString())
+            .param("done", "true")
+            .with(csrf()))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/list-todos"));
+
+        verify(todoRepository, times(1)).save(any(Todo.class));
+        verify(todoAssignmentService, times(1)).completeAssignment(1);
     }
 
     @Test
@@ -165,8 +196,7 @@ public class TodoControllerJpaTest {
 
         // When/Then
         try {
-            mockMvc.perform(get("/delete-todo")
-                    .param("id", "1"));
+                mockMvc.perform(delete("/todos/{id}", 1).with(csrf()));
             // If we get here, the test should fail
             fail("Expected exception was not thrown");
         } catch (Exception e) {

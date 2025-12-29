@@ -24,6 +24,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -72,7 +74,8 @@ public class TodoApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("listTodos"))
                 .andExpect(model().attributeExists("todos"))
-                .andExpect(content().string(containsString("Integration Test Todo")));
+                .andExpect(content().string(containsString("Integration Test Todo")))
+                .andExpect(content().string(containsString("data-testid=\"todo-assign-button\"")));
     }
 
     @Test
@@ -83,7 +86,7 @@ public class TodoApiIntegrationTest {
                         .param("targetDate", LocalDate.now().plusDays(7).toString())
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("list-todos"));
+                .andExpect(redirectedUrl("/list-todos"));
 
         // Verify the todo was added
         mockMvc.perform(get("/list-todos"))
@@ -95,21 +98,20 @@ public class TodoApiIntegrationTest {
     @WithMockUser(username = "integrationuser")
     void updateTodo_ShouldModifyExistingTodo() throws Exception {
         // First get the update form
-        mockMvc.perform(get("/update-todo")
-                        .param("id", String.valueOf(testTodo.getId())))
+        mockMvc.perform(get("/todos/{id}", String.valueOf(testTodo.getId())))
                 .andExpect(status().isOk())
                 .andExpect(view().name("todo"))
                 .andExpect(model().attributeExists("todo"));
 
         // Then submit the update
-        mockMvc.perform(post("/update-todo")
-                        .param("id", String.valueOf(testTodo.getId()))
-                        .param("description", "Updated Integration Todo")
-                        .param("targetDate", LocalDate.now().plusDays(10).toString())
-                        .param("done", "true")
-                        .with(csrf()))
+        mockMvc.perform(put("/todos/{id}", String.valueOf(testTodo.getId()))
+                .param("id", String.valueOf(testTodo.getId()))
+                .param("description", "Updated Integration Todo")
+                .param("targetDate", LocalDate.now().plusDays(10).toString())
+                .param("done", "true")
+                .with(csrf()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("list-todos"));
+                .andExpect(redirectedUrl("/list-todos"));
 
         // Verify the todo was updated
         mockMvc.perform(get("/list-todos"))
@@ -124,10 +126,9 @@ public class TodoApiIntegrationTest {
         Integer todoId = testTodo.getId();
 
         // Delete the todo
-        mockMvc.perform(get("/delete-todo")
-                        .param("id", String.valueOf(todoId)))
+        mockMvc.perform(delete("/todos/{id}", String.valueOf(todoId)).with(csrf()))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("list-todos"));
+                .andExpect(redirectedUrl("/list-todos"));
 
         // Verify the todo was deleted using the repository
         assertTrue(todoRepository.findById(todoId).isEmpty(), "Todo should be deleted from the database");
@@ -149,8 +150,7 @@ public class TodoApiIntegrationTest {
     @WithMockUser(username = "otheruser")
     void accessOtherUserTodo_ShouldBeDenied() {
         try {
-            mockMvc.perform(get("/update-todo")
-                    .param("id", String.valueOf(testTodo.getId())));
+                mockMvc.perform(get("/todos/{id}", String.valueOf(testTodo.getId())));
             // If we get here, the test should fail
             fail("Expected exception was not thrown");
         } catch (Exception e) {

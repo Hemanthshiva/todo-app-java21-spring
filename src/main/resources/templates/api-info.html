@@ -7,17 +7,17 @@
 </head>
 <body>
 <div layout:fragment="content">
-    <h1>API Information</h1>
+    <h1 data-testid="api-info-title">API Information</h1>
 
     <h2>Swagger UI</h2>
     <p>You can access the Swagger UI documentation for this application at:</p>
-    <a href="/swagger-ui/index.html" target="_blank" class="btn btn-primary">Open Swagger UI</a>
+    <a href="/swagger-ui/index.html" target="_blank" class="btn btn-primary" data-testid="swagger-ui-link">Open Swagger UI</a>
 
     <h2>Todo API Endpoints</h2>
     <p>This application primarily uses MVC controllers to serve HTML views rather than REST API endpoints.
         However, you can interact with the Todo functionality through the following URLs:</p>
 
-    <table class="table">
+    <table class="table" data-testid="api-endpoints-table">
         <thead>
         <tr>
             <th>URL</th>
@@ -42,19 +42,19 @@
             <td>Adds a new todo</td>
         </tr>
         <tr>
-            <td>/delete-todo?id={id}</td>
-            <td>GET</td>
+            <td>/todos/{id}</td>
+            <td>DELETE</td>
             <td>Deletes a todo with the specified ID</td>
         </tr>
         <tr>
-            <td>/update-todo?id={id}</td>
+            <td>/todos/{id}</td>
             <td>GET</td>
-            <td>Shows the page to update a todo with the specified ID</td>
+            <td>Shows the page to update (edit) a todo with the specified ID</td>
         </tr>
         <tr>
-            <td>/update-todo</td>
-            <td>POST</td>
-            <td>Updates a todo</td>
+            <td>/todos/{id}</td>
+            <td>PUT</td>
+            <td>Updates a todo with the specified ID</td>
         </tr>
         </tbody>
     </table>

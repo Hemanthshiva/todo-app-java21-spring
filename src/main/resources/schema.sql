@@ -1,4 +1,6 @@
 -- Drop tables if they exist to avoid conflicts
+DROP TABLE IF EXISTS notification;
+DROP TABLE IF EXISTS todo_assignment;
 DROP TABLE IF EXISTS authorities;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS todo;
@@ -26,4 +28,31 @@ CREATE TABLE IF NOT EXISTS authorities (
     authority TEXT NOT NULL,
     FOREIGN KEY(username) REFERENCES users(username),
     UNIQUE(username, authority)
+);
+
+-- Create todo_assignment table
+CREATE TABLE IF NOT EXISTS todo_assignment (
+    id INTEGER PRIMARY KEY,
+    todo_id INTEGER NOT NULL,
+    assigner_username TEXT NOT NULL,
+    assignee_username TEXT NOT NULL,
+    status TEXT NOT NULL,
+    tentative_completion_date TEXT,
+    decline_reason TEXT,
+    assigned_at TEXT,
+    responded_at TEXT,
+    FOREIGN KEY(todo_id) REFERENCES todo(id),
+    FOREIGN KEY(assigner_username) REFERENCES users(username),
+    FOREIGN KEY(assignee_username) REFERENCES users(username)
+);
+
+-- Create notification table
+CREATE TABLE IF NOT EXISTS notification (
+    id INTEGER PRIMARY KEY,
+    recipient_username TEXT NOT NULL,
+    message TEXT NOT NULL,
+    is_read INTEGER NOT NULL DEFAULT 0,
+    related_todo_id INTEGER,
+    created_at TEXT NOT NULL,
+    FOREIGN KEY(recipient_username) REFERENCES users(username)
 );

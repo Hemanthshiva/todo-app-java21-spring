@@ -50,12 +50,13 @@
   <div layout:fragment="content">
     <div class="container">
       <div class="todo-header text-center">
-        <h1 th:text="${todo.id == 0} ? 'Add New Todo' : 'Edit Todo'">Todo Form</h1>
+        <h1 th:text="${todo.id == 0} ? 'Add New Todo' : 'Edit Todo'" data-testid="addtodo-title">Todo Form</h1>
       </div>
 
       <div class="todo-form">
-        <form method="post" th:action="${todo.id == 0} ? @{/add-todo} : @{/update-todo}" th:object="${todo}">
+        <form method="post" th:action="${todo.id == 0} ? @{/add-todo} : @{/todos/{id}(id=${todo.id})}" th:object="${todo}" data-testid="addtodo-form">
           <input type="hidden" th:field="*{id}" />
+          <input type="hidden" name="_method" value="put" th:if="${todo.id != 0}" />
 
           <div class="form-group">
             <label for="description">Description</label>
@@ -80,7 +81,7 @@
           <div class="form-group text-center">
             <button type="submit" class="btn btn-primary btn-action" data-testid="form-submit-button" 
                     th:text="${todo.id == 0} ? 'Add Todo' : 'Update Todo'">Submit</button>
-            <a href="/list-todos" class="btn btn-secondary btn-action">Cancel</a>
+            <a href="/list-todos" class="btn btn-secondary btn-action" data-testid="form-cancel-button">Cancel</a>
           </div>
         </form>
       </div>

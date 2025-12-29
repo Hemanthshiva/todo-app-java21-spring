@@ -4,6 +4,14 @@ import com.learn.spring.todoapp.dto.UserRegistrationDto;
 import com.learn.spring.todoapp.entity.User;
 import com.learn.spring.todoapp.repository.AuthorityRepository;
 import com.learn.spring.todoapp.repository.UserRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -18,8 +26,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import com.learn.spring.todoapp.dto.UserDTO;
 
 @Controller
+@Tag(name = "User Management", description = "User authentication, registration, and search functionality")
 public class UserController {
 
     private final UserRepository userRepository;
@@ -32,18 +45,71 @@ public class UserController {
         this.passwordEncoder = passwordEncoder;
     }
 
+    @GetMapping("/api/users/search")
+    @ResponseBody
+    @Operation(
+        summary = "Search users by username",
+        description = "Search for users in the system by their username. Returns a list of matching users with username and email information. " +
+                      "Useful for finding users to assign tasks to."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Successfully retrieved matching users",
+            content = @Content(
+                mediaType = "application/json",
+                array = @ArraySchema(schema = @Schema(implementation = UserDTO.class))
+            )
+        ),
+        @ApiResponse(responseCode = "401", description = "Authentication required")
+    })
+    @Tag(name = "User Management", description = "User-related operations including search and registration")
+    public List<UserDTO> searchUsers(
+            @Parameter(description = "Username search query (case-insensitive, supports partial matches)", required = true)
+            @RequestParam String username) {
+        return userRepository.findByUsernameContainingIgnoreCase(username).stream()
+                .map(user -> new UserDTO(user.getUsername(), user.getEmail()))
+                .collect(Collectors.toList());
+    }
+
     @GetMapping("/register")
+    @Operation(
+        summary = "Show user registration form",
+        description = "Displays the registration form page for new users to create an account."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Registration form page successfully displayed"),
+        @ApiResponse(responseCode = "302", description = "If already authenticated, may redirect to home")
+    })
     public String showRegistrationForm(Model model) {
         model.addAttribute("user", new UserRegistrationDto());
         return "register";
     }
 
     @GetMapping("/login")
+    @Operation(
+        summary = "Show user login form",
+        description = "Displays the login form page for user authentication."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Login form page successfully displayed"),
+        @ApiResponse(responseCode = "302", description = "If already authenticated, may redirect to home")
+    })
     public String showLoginForm() {
         return "login";
     }
 
     @PostMapping("/register")
+    @Operation(
+        summary = "Register a new user account",
+        description = "Processes the registration form to create a new user account. Validates username uniqueness, password match, " +
+                      "and email format. Automatically logs in the user after successful registration."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "302", description = "User registered successfully, redirects to welcome page"),
+        @ApiResponse(responseCode = "400", description = "Validation error (duplicate username, invalid email, password mismatch, etc.)"),
+        @ApiResponse(responseCode = "200", description = "Returns to registration form with error messages on validation failure")
+    })
     public String registerUserAccount(@ModelAttribute("user") @Valid UserRegistrationDto userDto, BindingResult result, Model model) {
         if (!userDto.getPassword().equals(userDto.getConfirmPassword())) {
             result.rejectValue("confirmPassword", "user.confirmPassword.mismatch", "Passwords do not match");
