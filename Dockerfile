@@ -7,7 +7,7 @@ RUN mvn clean package -DskipTests
 # Run stage
 FROM eclipse-temurin:21-jdk
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/todo-app/target/*.jar app.jar
 
 # Create directory for SQLite DB
 VOLUME /data
