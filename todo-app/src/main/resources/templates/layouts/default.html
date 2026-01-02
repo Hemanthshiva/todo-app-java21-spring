@@ -38,7 +38,7 @@
                     <span class="navbar-text me-3" data-testid="header-username" 
                           th:text="${#authentication.name}">Username</span>
                     <div class="dropdown me-3">
-                        <button class="btn btn-outline-light position-relative dropdown-toggle" type="button" id="notificationsDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-testid="notifications-button">
+                        <button class="btn btn-outline-light position-relative dropdown-toggle" type="button" id="notificationsDropdown" data-bs-toggle="dropdown" aria-expanded="false" data-testid="notifications-button" onclick="fetchNotifications()">
                             <span class="bi bi-bell"></span>
                             <span id="notificationCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;" data-testid="notifications-badge">0</span>
                         </button>
