@@ -6,6 +6,7 @@
         <groupId>com.learn.spring</groupId>
         <artifactId>todo-app-root</artifactId>
         <version>0.0.1-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>todo-app</artifactId>
     <name>todo-app</name>
