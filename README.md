@@ -567,37 +567,146 @@ mvn spotless:apply
 
 ## Testing
 
-The project includes comprehensive test coverage:
+The project includes comprehensive test coverage with two specialized test suites:
+
+### Test Modules
+
+#### 1. **API Tests** (`api-tests/`)
+End-to-end REST API testing using **RestAssured**, **TestNG**, and **Allure** reporting.
+
+- **Framework**: RestAssured with fluent API for HTTP requests
+- **Test Framework**: TestNG with data-driven and parallel execution support
+- **Reporting**: Allure with detailed request/response logging
+- **Module Label**: All API tests are tagged with `module: API` for easy identification in Allure reports
+- **Coverage**: User management, todo lifecycle, assignments, notifications, security
+
+Run API tests:
+```bash
+mvn test -pl api-tests
+```
+
+#### 2. **UI Tests** (`ui-tests/`)
+Browser-based UI automation using **Selenium WebDriver** with **Page Object Model** pattern.
+
+- **Framework**: Selenium WebDriver 4.18.1 with Chrome/Chromium support
+- **Page Object Model**: Maintainable, reusable page classes for all app pages
+- **Test Framework**: TestNG with TestNG listeners for robust test execution
+- **Reporting**: Allure with screenshots on failure
+- **Module Label**: All UI tests are tagged with `module: UI` for easy identification in Allure reports
+- **Headless Mode**: Run tests headless (CI) or headed (local debugging)
+- **Coverage**: User onboarding, todo management, assignment workflows, notifications
+
+Run UI tests (headless - default for CI):
+```bash
+mvn test -pl ui-tests
+```
+
+Run UI tests in headed mode (for visual debugging):
+```bash
+mvn test -pl ui-tests -Dheadless=false
+```
+
+Run specific UI test:
+```bash
+mvn test -pl ui-tests -Dtest=UserOnboardingTest#shouldAllowNewUserToRegisterAndLoginSuccessfully
+```
 
 ### Test Categories
-- **Unit Tests**: Individual component testing
-- **Integration Tests**: Multi-component interaction testing
-- **Security Tests**: Authentication and authorization testing
+- **Unit Tests**: Individual component testing in the backend
+- **API Integration Tests**: End-to-end REST API testing
+- **UI End-to-End Tests**: Browser-based workflow testing
+- **Security Tests**: Authentication, authorization, and permission validation
 
-### Test Reports
+### Allure Test Reports
 
-After running tests, view the report:
+The project generates **combined Allure reports** aggregating results from all test modules.
+
+#### Generate Reports Locally
+
+After running tests, generate the combined report:
+
 ```bash
-mvn clean test
-# Reports available in: target/surefire-reports/
+# Install Allure CLI (if not already installed)
+curl -Lo allure-2.20.1.tgz https://github.com/allure-framework/allure2/releases/download/2.20.1/allure-2.20.1.tgz
+tar -zxf allure-2.20.1.tgz
+export PATH="$(pwd)/allure-2.20.1/bin:$PATH"
+
+# Generate combined report from all modules
+allure generate todo-app/target/allure-results api-tests/target/allure-results ui-tests/target/allure-results --clean -o combined-allure-report
+
+# Open report in browser
+allure open combined-allure-report
 ```
+
+#### CI/CD Integration
+
+The GitHub Actions workflow (`/.github/workflows/ci.yml`) automatically:
+1. Runs all tests (unit, API, UI)
+2. Collects Allure results from all modules
+3. Generates a combined Allure report
+4. Uploads both the report and raw results as artifacts
+
+Access reports:
+- Download **allure-report** artifact from GitHub Actions
+- Extract and open `index.html` in a browser
+
+#### Module Identification
+
+Tests are automatically labeled with their module type for easy filtering in Allure reports:
+- **API Tests**: `module: API` label on all tests
+- **UI Tests**: `module: UI` label on all tests
+
+Use Allure's label filter to show only API or only UI tests.
 
 ### Test Execution
 
-Run all tests:
+Run all tests (unit + API + UI):
 ```bash
-mvn test
+mvn clean test
 ```
 
-Run specific test:
+Run unit tests only:
+```bash
+mvn test -pl todo-app
+```
+
+Run API tests only:
+```bash
+mvn test -pl api-tests
+```
+
+Run UI tests only:
+```bash
+mvn test -pl ui-tests
+```
+
+Run specific test class:
 ```bash
 mvn test -Dtest=TodoRepositoryTest
 ```
 
-Run integration tests:
+Run specific test method:
 ```bash
-mvn test -Dtest=*IntegrationTest
+mvn test -Dtest=UserOnboardingTest#shouldAllowNewUserToRegisterAndLoginSuccessfully
 ```
+
+### Test Reports
+
+View test reports in target directories:
+```bash
+# Unit test reports
+target/surefire-reports/
+
+# API test results
+api-tests/target/allure-results/
+
+# UI test results
+ui-tests/target/allure-results/
+```
+
+For detailed documentation on each test module, see:
+- [API Tests Guide](api-tests/README.md) - RestAssured, test structure, how to run and generate reports
+- [UI Tests Guide](ui-tests/README.md) - Selenium, Page Object Model, how to run and generate reports
 
 ## Troubleshooting
 
@@ -645,7 +754,7 @@ For issues, questions, or suggestions:
 
 ---
 
-**Last Updated**: December 2024  
+**Last Updated**: January 2026 
 **Project Version**: 1.0.0  
 **Java Version**: 21  
 **Spring Boot Version**: 3.2.5
