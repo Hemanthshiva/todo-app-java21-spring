@@ -41,6 +41,14 @@ public class BaseTest {
         wait = new WebDriverWait(driver, Duration.ofSeconds(15));
 
         driver.get(ConfigurationManager.getBaseUrl());
+
+        // Attach module label for Allure reporting
+        io.qameta.allure.Allure.getLifecycle().updateTestCase(testResult -> {
+            if (testResult.getLabels() == null) {
+                testResult.setLabels(new java.util.ArrayList<>());
+            }
+            testResult.getLabels().add(new io.qameta.allure.model.Label().setName("module").setValue("UI"));
+        });
     }
 
     @AfterMethod

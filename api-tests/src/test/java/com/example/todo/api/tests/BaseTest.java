@@ -6,6 +6,11 @@ import io.restassured.RestAssured;
 import io.restassured.config.ObjectMapperConfig;
 import io.restassured.config.RestAssuredConfig;
 import org.testng.annotations.BeforeSuite;
+import org.testng.annotations.BeforeMethod;
+import io.qameta.allure.Allure;
+import io.qameta.allure.model.Label;
+
+import java.util.ArrayList;
 
 public class BaseTest {
 
@@ -17,5 +22,16 @@ public class BaseTest {
         RestAssured.config = RestAssuredConfig.config()
                 .objectMapperConfig(ObjectMapperConfig.objectMapperConfig()
                         .jackson2ObjectMapperFactory((type, s) -> objectMapper));
+    }
+
+    @BeforeMethod
+    public void attachModuleLabel() {
+        // Add a custom label so Allure reports can be grouped by module
+        Allure.getLifecycle().updateTestCase(testResult -> {
+            if (testResult.getLabels() == null) {
+                testResult.setLabels(new ArrayList<>());
+            }
+            testResult.getLabels().add(new Label().setName("module").setValue("API"));
+        });
     }
 }
