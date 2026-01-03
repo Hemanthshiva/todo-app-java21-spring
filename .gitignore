@@ -93,3 +93,4 @@ node_modules/
 
 # Misc
 application-prod.properties
+ui-tests/allure-report/

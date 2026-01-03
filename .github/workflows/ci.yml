@@ -40,37 +40,84 @@ jobs:
       run: mvn test -pl ui-tests
 
     - name: Merge Allure results
-      if: always()
+      if: ${{ always() }}
       run: |
         mkdir -p combined-allure-results
-        cp -r api-tests/target/allure-results/* combined-allure-results/ || true
-        cp -r ui-tests/target/allure-results/* combined-allure-results/ || true
+        for d in todo-app api-tests ui-tests; do
+          if [ -d "$d/target/allure-results" ]; then
+            echo "Copying $d/target/allure-results"
+            # copy directory contents safely (handles empty dirs)
+            cp -r "$d/target/allure-results/." combined-allure-results/ || true
+            echo "Found $(find $d/target/allure-results -type f | wc -l) files in $d/target/allure-results"
+          else
+            echo "No allure results in $d/target/allure-results"
+          fi
+        done
+
+    - name: List Allure sources (debug)
+      if: ${{ always() }}
+      run: |
+        echo "Combined results overview:"
+        ls -la combined-allure-results || true
+        echo "Total result files: $(find combined-allure-results -type f | wc -l)"
+        for d in todo-app api-tests ui-tests; do
+          echo "== $d ==";
+          if [ -d "$d/target/allure-results" ]; then
+            echo "Count: $(find $d/target/allure-results -type f | wc -l)"
+            ls -la $d/target/allure-results | sed -n '1,200p'
+          else
+            echo "missing"
+          fi
+        done
+
+    - name: Install Allure CLI
+      if: ${{ always() }}
+      run: |
+        curl -o allure-2.20.1.tgz -Ls https://github.com/allure-framework/allure2/releases/download/2.20.1/allure-2.20.1.tgz
+        tar -zxf allure-2.20.1.tgz
+        sudo mv allure-2.20.1 /opt/allure
+        echo "/opt/allure/bin" >> $GITHUB_PATH
 
     - name: Generate Combined Allure Report
-      if: always()
+      if: ${{ always() }}
       run: |
-        mvn io.qameta.allure:allure-maven:2.12.0:report -Dallure.results.directory=combined-allure-results -Dallure.report.directory=combined-allure-report || true
+        mkdir -p combined-allure-report
+        echo "Which allure: $(which allure || true)"
+        allure --version || true
+        if [ -d combined-allure-results ] && [ "$(ls -A combined-allure-results)" ]; then
+          echo "Generating Allure report from combined-allure-results"
+          set -x
+          allure generate combined-allure-results --clean -o combined-allure-report || { echo "allure generate failed"; ls -R combined-allure-results || true; exit 1; }
+          set +x
+        else
+          echo "No allure results to generate report from."
+        fi
+        echo "Generated report contents:"
+        ls -la combined-allure-report || true
+        echo "Report file count: $(find combined-allure-report -type f | wc -l)"
 
     - name: Upload Allure Report
-      if: always()
+      if: ${{ always() }}
       uses: actions/upload-artifact@v4
       with:
         name: allure-report
-        path: combined-allure-report
+        path: |
+          combined-allure-report
+          combined-allure-results
 
     - name: Set up Docker Buildx
-      if: success()
+      if: ${{ success() }}
       uses: docker/setup-buildx-action@v3
 
     - name: Login to Docker Hub
-      if: success()
+      if: ${{ success() }}
       uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_PAT }}
 
     - name: Build and Push Docker Image
-      if: success()
+      if: ${{ success() }}
       uses: docker/build-push-action@v5
       with:
         context: .
